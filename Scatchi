@@ -1,0 +1,167 @@
+import pygame
+from enum import Enum
+import random
+import time
+
+
+class Direction(Enum):
+    UP = 1
+    DOWN = 2
+    RIGHT = 3
+    LEFT = 4
+
+
+
+clock = pygame.time.Clock()
+
+bild = 10
+bild2 = 20
+bild3 = 5
+
+pygame.time.get_ticks()
+
+
+
+windows_width = 800
+windows_height = 800
+pygame.init()
+pygame.display.set_caption("Snake")
+window = pygame.display.set_mode((windows_width, windows_width))
+
+refresh_controller = pygame.time.Clock()
+
+
+# Schlange
+snake_position = [255, 255]
+snake_body = [[255, 255],
+              [245, 250],
+              [235, 250]]
+
+# Apfel
+food_position = [100, 100]
+
+# Mauer
+wall_position = [[400, 500],
+         [10, 50], [60, 100]]
+
+
+
+
+
+
+
+
+def handle_keys(direction):
+    new_direction = direction
+    for event in [e for e in pygame.event.get() if e.type == pygame.KEYDOWN]:
+        if event.key == pygame.K_UP and direction != Direction.DOWN:
+            new_direction = Direction.UP
+        if event.key == pygame.K_DOWN and direction != Direction.UP:
+            new_direction = Direction.DOWN
+        if event.key == pygame.K_RIGHT and direction != Direction.LEFT:
+            new_direction = Direction.RIGHT
+        if event.key == pygame.K_LEFT and direction != Direction.RIGHT:
+            new_direction = Direction.LEFT
+
+    return new_direction
+
+
+def move_snake(direction):
+    if direction == Direction.UP:
+        snake_position[1] -= bild
+    if direction == Direction.DOWN:
+        snake_position[1] += bild
+    if direction == Direction.LEFT:
+        snake_position[0] -= bild
+    if direction == Direction.RIGHT:
+        snake_position[0] += bild
+    snake_body.insert(0, list(snake_position))
+
+
+def generate_new_food():
+    food_position[0] = random.randrange(0, ((windows_width - 2) // bild)) * bild
+    food_position[1] = random.randrange(1, ((windows_height - 2) // bild)) * bild
+    while (food_position[0] == wall_position[0] and food_position[1] == wall_position[1]) or (wall_position[0] == food_position[0] and wall_position[1] and food_position[1]) or (food_position[0] == snake_position[0] and food_position[1] == snake_position[1]):
+        food_position[0] = random.randrange(0, ((windows_width - 2) // bild)) * bild
+        food_position[1] = random.randrange(1, (( - 2) // bild)) * bild
+
+def wall():
+    position = [0,0]
+    position[0] = random.randrange(0, ((windows_width - 2) // bild)) * bild
+    position[1] =random.randrange(1, ((windows_height - 2) // bild)) * bild
+    while (food_position[0] == position[0] and food_position[1] == position[1]) or (position[0] == snake_position[0] and position[1] == snake_position[1]):
+        position[0] = random.randrange(0, ((windows_width - 2) // bild)) * bild
+        position[1] =random.randrange(1, ((windows_height - 2) // bild)) * bild
+    wall_position.append(position)
+
+score = 0
+
+def get_food():
+    global score
+    if (snake_position[0] == food_position[0] or snake_position[0] == food_position[0]-5)  and (snake_position[1] == food_position[1] or snake_position[1] == food_position[1]-5):
+
+
+        score += 1
+        wall()
+        generate_new_food()
+    else:
+        snake_body.pop()
+
+
+def repaint():
+    window.fill(pygame.Color(0, 0, 0))
+    for body in snake_body:
+        pygame.draw.circle(window, pygame.Color(8, 255, 0), (body[0], body[1]), bild3)
+    pygame.draw.rect(window, pygame.Color(255, 0, 0), pygame.Rect(food_position[0]-bild, food_position[1] -bild, bild, bild))
+    for position in wall_position:
+        pygame.draw.rect(window, pygame.Color(255, 255, 255), pygame.Rect(position[0] - bild, position[1] - bild, bild, bild))
+
+
+
+def game_over_message():
+    font = pygame.font.SysFont("Arial", 48)
+    render = font.render(f'Score: {score}', True, pygame.Color(255,255,255))
+    rect = render.get_rect()
+    rect.midtop =(windows_width / 2, windows_height / 2)
+    window.blit(render, rect)
+    pygame.display.flip()
+    time.sleep(1)
+    pygame.quit(5)
+    exit(0)
+
+def game_over():
+    if snake_position[0] < 0 or snake_position[0] > windows_width - bild:
+        game_over_message()
+    if snake_position[1] < 0 or snake_position[1] > windows_width -bild:
+        game_over_message()
+    for blob in snake_body[1:]:
+        if snake_position[0] == blob[0] and snake_position[1] == blob[1]:
+            game_over_message()
+    for position in wall_position:
+        if (snake_position[0] == position[0]-5 or snake_position[0] == position[0]) and (snake_position[1] == position[1]-5 or snake_position[1] == position[1]):
+            game_over_message()
+
+def paint_hud():
+     font = pygame.font.SysFont("Arial", 20)
+     render = font.render (f'Score: {score}', True, pygame.Color(255, 255, 255))
+     rect = render.get_rect()
+     window.blit(render, rect)
+     pygame.display.flip()
+
+
+
+def game_loop():
+    direction = Direction.RIGHT
+    while True:
+        direction = handle_keys(direction)
+        move_snake(direction)
+        get_food()
+        print(food_position)
+        repaint()
+        game_over()
+        paint_hud()
+        pygame.display.update()
+        pygame.time.delay(90)
+
+if __name__ == "__main__":
+    game_loop()
